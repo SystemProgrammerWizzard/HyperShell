@@ -1,71 +1,86 @@
 #include "ssh.hpp"
 
-SSH::SSH(const std::string &username, const std::string &ip_address, const std::string &password, ssh_session ssh_connection)
+SSH::SSH(const std::string &username, const std::string &ip_address, const std::string &password)
 {
     if (username.empty() || ip_address.empty() || password.empty())
     {
         throw std::invalid_argument("Error: SSH parameters cannot be empty.");
     }
-    if (ssh_connection == nullptr)
-    {
-        throw std::invalid_argument("Error: SSH connection cannot be null.");
-    }
 
     this->username = username;
     this->ip_address = ip_address;
     this->password = password;
-    this->ssh_connection = ssh_connection;
     this->closed = false;
+
+    ssh_connection = ssh_new();
+    if (ssh_connection == nullptr)
+    {
+        throw std::runtime_error("Failed to allocate SSH session");
+    }
 }
 
 bool SSH::connect()
 {
-    // Default SSH port
     unsigned int port = 22;
 
-    // Set SSH options
     if (ssh_options_set(ssh_connection, SSH_OPTIONS_HOST, ip_address.c_str()) != SSH_OK)
-    {
-        fprintf(stderr, "Error setting SSH host: %s\n", ssh_get_error(ssh_connection));
-        return false;
-    }
+        throw std::runtime_error(std::string("SSH host set error: ") + ssh_get_error(ssh_connection));
+
     if (ssh_options_set(ssh_connection, SSH_OPTIONS_USER, username.c_str()) != SSH_OK)
-    {
-        fprintf(stderr, "Error setting SSH username: %s\n", ssh_get_error(ssh_connection));
-        return false;
-    }
+        throw std::runtime_error(std::string("SSH user set error: ") + ssh_get_error(ssh_connection));
+
     if (ssh_options_set(ssh_connection, SSH_OPTIONS_PORT, &port) != SSH_OK)
-    {
-        fprintf(stderr, "Error setting SSH port: %s\n", ssh_get_error(ssh_connection));
-        return false;
-    }
+        throw std::runtime_error(std::string("SSH port set error: ") + ssh_get_error(ssh_connection));
 
-    // Establish the SSH connection
-    int rc = ssh_connect(ssh_connection);
+    if (ssh_connect(ssh_connection) != SSH_OK)
+        throw std::runtime_error(std::string("SSH connect error: ") + ssh_get_error(ssh_connection));
+
+    if (ssh_userauth_password(ssh_connection, nullptr, password.c_str()) != SSH_AUTH_SUCCESS)
+        throw std::runtime_error(std::string("SSH auth error: ") + ssh_get_error(ssh_connection));
+
+    return true;
+}
+
+bool SSH::exec(std::string command)
+{
+    int rc;
+    ssh_channel channel = ssh_channel_new(ssh_connection);
+    if (channel == nullptr)
+        throw std::runtime_error("Failed to create SSH channel");
+
+    rc = ssh_channel_open_session(channel);
     if (rc != SSH_OK)
+        throw std::runtime_error(std::string("Failed to open channel: ") + ssh_get_error(ssh_connection));
+
+    rc = ssh_channel_request_exec(channel, command.c_str());
+    if (rc != SSH_OK)
+        throw std::runtime_error(std::string("Failed to execute command: ") + ssh_get_error(ssh_connection));
+
+    char buffer[256];
+    int nbytes = ssh_channel_read(channel, buffer, sizeof(buffer) - 1, 0);
+    if (nbytes > 0)
     {
-        fprintf(stderr, "Error connecting to %s: %s\n", ip_address.c_str(), ssh_get_error(ssh_connection));
-        return false;
+        buffer[nbytes] = '\0';
+        printf("%s", buffer);
     }
 
-    // Authenticate with password
-    rc = ssh_userauth_password(ssh_connection, nullptr, password.c_str());
-    if (rc != SSH_AUTH_SUCCESS)
-    {
-        fprintf(stderr, "Error authenticating with password: %s\n", ssh_get_error(ssh_connection));
-
-        return false;
-    }
+    ssh_channel_send_eof(channel);
+    ssh_channel_close(channel);
+    ssh_channel_free(channel);
 
     return true;
 }
 
 SSH::~SSH()
 {
-    if (closed)
+    if (ssh_connection != nullptr)
     {
-        ssh_disconnect(ssh_connection);
+        if (!closed)
+        {
+            ssh_disconnect(ssh_connection);
+        }
         ssh_free(ssh_connection);
+        ssh_connection = nullptr;
     }
 }
 

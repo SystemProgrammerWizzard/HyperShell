@@ -17,7 +17,7 @@ private:
 public:
     // Public destructor so that std::optional can destroy SSH objects
     ~SSH();
-    SSH(const std::string &username, const std::string &ip_address, const std::string &password, ssh_session ssh_connection);
+    SSH(const std::string &username, const std::string &ip_address, const std::string &password);
 
     bool connect();
     bool exec(std::string);

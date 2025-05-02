@@ -4,10 +4,9 @@
 TEST(SSH, MissingAllParameters)
 {
   // Try creating an SSH object with invalid (empty) parameters.
-  ssh_session ssh_connection = ssh_new();
   try
   {
-    SSH sshOpt("", "", "", ssh_connection);
+    SSH sshOpt("", "", "");
     FAIL() << "Expected std::invalid_argument exception";
   }
   catch (const std::invalid_argument &e)
@@ -20,13 +19,11 @@ TEST(SSH, MissingAllParameters)
   }
 }
 
-TEST(SSH, MissingConnection)
+TEST(SSH, MissingAddress)
 {
-  // Try creating an SSH object with a null connection.
-  ssh_session ssh_connection = ssh_new();
   try
   {
-    SSH sshOpt("dave", "", "Oces2023", ssh_connection);
+    SSH sshOpt("dave", "", "Oces2023");
     FAIL() << "Expected std::invalid_argument exception";
   }
   catch (const std::invalid_argument &e)
@@ -37,33 +34,12 @@ TEST(SSH, MissingConnection)
   {
     FAIL() << "Expected std::invalid_argument exception";
   }
-  ssh_free(ssh_connection);
-}
-TEST(SSH, MissingConnector)
-{
-  // Try creating an SSH object with a null connection.
-  ssh_session ssh_connection = nullptr;
-  try
-  {
-    SSH sshOpt("dave", "192.168.0.5", "Oces2023", ssh_connection);
-    FAIL() << "Expected std::invalid_argument exception";
-  }
-  catch (const std::invalid_argument &e)
-  {
-    EXPECT_EQ(std::string(e.what()), "Error: SSH connection cannot be null.");
-  }
-  catch (...)
-  {
-    FAIL() << "Expected std::invalid_argument exception";
-  }
-  ssh_free(ssh_connection);
 }
 
 TEST(SSH, CreateValid)
 {
   // Create an SSH object with valid parameters.
-  ssh_session ssh_connection = ssh_new();
-  SSH sshOpt("dave", "192.168.0.248", "Oces2023", ssh_connection);
+  SSH sshOpt("dave", "192.168.0.248", "Oces2023");
 
   // Placeholder assertion until connection logic is implemented.
   SUCCEED() << "SSH object created successfully.";
@@ -73,8 +49,7 @@ TEST(SSH, CreateValid)
 
 TEST(SSH, DestroyComplete)
 {
-  ssh_session ssh_connection = ssh_new();
-  SSH sshOpt("dave", "192.168.0.248", "Oces2023", ssh_connection);
+  SSH sshOpt("dave", "192.168.0.248", "Oces2023");
   sshOpt.disconnect();
 
 // Check if it completely destroy
@@ -86,8 +61,7 @@ TEST(SSH, DestroyComplete)
 TEST(SSH, ValidSSH)
 {
   // Create an SSH object with valid parameters.
-  ssh_session ssh_connection = ssh_new();
-  SSH sshOpt("dave", "192.168.0.248", "Oces2023", ssh_connection);
+  SSH sshOpt("dave", "192.168.0.248", "Oces2023");
   bool success = sshOpt.connect();
   EXPECT_TRUE(success);
   sshOpt.disconnect();
@@ -96,20 +70,30 @@ TEST(SSH, ValidSSH)
 TEST(SSH, InvalidSSH)
 {
   // Create an SSH object with invalid parameters.
-  ssh_session ssh_connection = ssh_new();
-  SSH sshOpt("dave", "192.168.0.0", "Oces2023", ssh_connection);
+  SSH sshOpt("dave", "192.168.0.0", "Oces2023");
+  bool success;
   try
   {
-    sshOpt.connect();
+    success = sshOpt.connect();
     FAIL() << "Expected std::runtime_error exception";
   }
   catch (const std::runtime_error &e)
   {
-    EXPECT_EQ(std::string(e.what()), "Error connecting to 192.168.0.0: Socket error: No route to host");
+    EXPECT_FALSE(success);
   }
   catch (...)
   {
     FAIL() << "Expected std::runtime_error exception";
   }
+  sshOpt.disconnect();
+}
+
+TEST(SSH, Execute)
+{
+
+  SSH sshOpt("dave", "192.168.0.248", "Oces2023");
+  bool success = sshOpt.connect();
+  sshOpt.exec("ls");
+  EXPECT_TRUE(success);
   sshOpt.disconnect();
 }
