@@ -39,7 +39,7 @@ TEST(SSH, MissingAddress)
 TEST(SSH, CreateValid)
 {
   // Create an SSH object with valid parameters.
-  SSH sshOpt("dave", "192.168.0.248", "Oces2023");
+  SSH sshOpt("debian", "localhost", "debian");
 
   // Placeholder assertion until connection logic is implemented.
   SUCCEED() << "SSH object created successfully.";
@@ -49,7 +49,7 @@ TEST(SSH, CreateValid)
 
 TEST(SSH, DestroyComplete)
 {
-  SSH sshOpt("dave", "192.168.0.248", "Oces2023");
+  SSH sshOpt("debian", "localhost", "debian");
   sshOpt.disconnect();
 
 // Check if it completely destroy
@@ -61,7 +61,7 @@ TEST(SSH, DestroyComplete)
 TEST(SSH, ValidSSH)
 {
   // Create an SSH object with valid parameters.
-  SSH sshOpt("dave", "192.168.0.248", "Oces2023");
+  SSH sshOpt("debian", "localhost", "debian");
   bool success = sshOpt.connect();
   EXPECT_TRUE(success);
   sshOpt.disconnect();
@@ -70,7 +70,7 @@ TEST(SSH, ValidSSH)
 TEST(SSH, InvalidSSH)
 {
   // Create an SSH object with invalid parameters.
-  SSH sshOpt("dave", "192.168.0.0", "Oces2023");
+  SSH sshOpt("dave", "0.0.0.1", "Oces2023");
   bool success;
   try
   {
@@ -91,7 +91,7 @@ TEST(SSH, InvalidSSH)
 TEST(SSH, Execute)
 {
 
-  SSH sshOpt("dave", "192.168.0.248", "Oces2023");
+  SSH sshOpt("debian", "localhost", "debian");
   bool success = sshOpt.connect();
   sshOpt.exec("ls");
   EXPECT_TRUE(success);
