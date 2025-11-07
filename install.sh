@@ -4,13 +4,13 @@ install_dependencies() {
     case $OS in
         ubuntu|debian)
             apt-get update
-            apt-get install -y libssh-dev libncurses5-dev
+            apt-get install -y libssh-dev libncurses5-dev cmake
             ;;
         fedora|centos)
-            dnf install -y libssh-devel ncurses-devel
+            dnf install -y libssh-devel ncurses-devel cmake
             ;;
         arch)
-            pacman -Syu libssh ncurses
+            pacman -Syu libssh ncurses cmake
             ;;
         *)
             echo "Unsupported OS: $OS"
