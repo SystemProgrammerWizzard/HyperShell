@@ -19,6 +19,7 @@ add_library(hypershell_lib
     src/ssh.cpp
     src/terminal.cpp
     src/task.cpp
+    src/hypershell.cpp
 )
 
 target_include_directories(hypershell_lib 
