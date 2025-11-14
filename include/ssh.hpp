@@ -13,9 +13,7 @@ private:
     std::string password;
     ssh_session ssh_connection;
     bool closed = false;
-    // Private constructor: only the create method can call this.
 public:
-    // Public destructor so that std::optional can destroy SSH objects
     ~SSH();
     SSH(const std::string &username, const std::string &ip_address, const std::string &password);
 

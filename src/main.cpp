@@ -10,34 +10,45 @@ parse_jobs_from_cli(int argc, char* argv[]) {
     HyperShellConfig cfg;
     std::vector<std::string> jobs;
 
-    CLI::App app("HyperShell CLI");
-
-    app.add_flag("-v,--verbose", cfg.verbose, "Verbose mode");
-    app.add_flag("-d,--dry-run", cfg.dry_run, "Dry run before executing");
-    app.add_flag("-j,--json", cfg.json_output, "Output JSON");
+    CLI::App app("HyperShell CLI", "hypershell");
+    app.require_subcommand(1);
     app.set_version_flag("-V,--version", "HyperShell v0.1.0");
 
-    std::string mode_str = "local";
-    app.add_option("--mode", mode_str, "Execution mode: local or remote")
-       ->check(CLI::IsMember({"local", "remote"}));
+    auto* ssh_cmd = app.add_subcommand("ssh", "Execute commands on remote hosts via SSH");
+    std::string user;
+    std::string hosts;
+    std::string password;
+    ssh_cmd->add_option("--user", user, "SSH username")->required();
+    ssh_cmd->add_option("--password", password, "SSH password")->required();
+    ssh_cmd->add_option("--hosts", hosts, "Comma-separated list of hosts")->required();
+    ssh_cmd->add_option("--cmd", jobs, "Commands to execute")->required();
+    ssh_cmd->add_flag("-v,--verbose", cfg.verbose, "Verbose mode");
+    ssh_cmd->add_flag("-d,--dry-run", cfg.dry_run, "Dry run before executing");
+    ssh_cmd->add_flag("-j,--json", cfg.json_output, "Output JSON");
 
+    auto* local_cmd = app.add_subcommand("local", "Execute commands locally");
+    local_cmd->add_option("--cmd", jobs, "Commands to execute")->required();
+    local_cmd->add_flag("-v,--verbose", cfg.verbose, "Verbose mode");
+    local_cmd->add_flag("-d,--dry-run", cfg.dry_run, "Dry run before executing");
+    local_cmd->add_flag("-j,--json", cfg.json_output, "Output JSON");
 
-    app.add_option("commands", jobs, "Commands to execute")->expected(0, -1);
-
-    if (argc == 1) {
-        std::cout << app.help() << std::endl;
-        std::exit(0);
+    try {
+        app.parse(argc, argv);
+    } catch (const CLI::ParseError &e) {
+        std::exit(app.exit(e));
     }
 
-    app.parse(argc, argv);
+    if (ssh_cmd->parsed()) {
+        cfg.machine_location = Machine::REMOTE;
 
-    if (mode_str == "remote") cfg.machine_location = Machine::REMOTE;
-    else cfg.machine_location = Machine::LOCAL;
-
+        cfg.machine = SSH(user, hosts, password);
+        
+    } else if (local_cmd->parsed()) {
+        cfg.machine_location = Machine::LOCAL;
+    }
 
     return {cfg, jobs};
 }
-
 
 int main(int argc, char* argv[]) {
     auto [cfg, commands] = parse_jobs_from_cli(argc, argv);
