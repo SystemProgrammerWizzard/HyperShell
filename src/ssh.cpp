@@ -19,6 +19,39 @@ SSH::SSH(const std::string &username, const std::string &ip_address, const std::
     }
 }
 
+SSH::SSH(SSH&& other) noexcept
+        : username(std::move(other.username))
+        , ip_address(std::move(other.ip_address))
+        , password(std::move(other.password))
+        , ssh_connection(other.ssh_connection)
+        , closed(other.closed)
+    {
+        other.ssh_connection = nullptr;
+        other.closed = true;
+    }
+
+SSH& SSH::operator=(SSH&& other) noexcept {
+        if (this != &other) {
+            if (ssh_connection != nullptr) {
+                if (!closed) {
+                    ssh_disconnect(ssh_connection);
+                }
+                ssh_free(ssh_connection);
+            }
+            
+            username = std::move(other.username);
+            ip_address = std::move(other.ip_address);
+            password = std::move(other.password);
+            ssh_connection = other.ssh_connection;
+            closed = other.closed;
+            
+            // Nullify other
+            other.ssh_connection = nullptr;
+            other.closed = true;
+        }
+        return *this;
+    }
+
 bool SSH::connect()
 {
     unsigned int port = 22;

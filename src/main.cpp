@@ -41,19 +41,19 @@ parse_jobs_from_cli(int argc, char* argv[]) {
     if (ssh_cmd->parsed()) {
         cfg.machine_location = Machine::REMOTE;
 
-        cfg.machine = SSH(user, hosts, password);
+        cfg.machine.emplace(user, hosts, password);
         
     } else if (local_cmd->parsed()) {
         cfg.machine_location = Machine::LOCAL;
     }
 
-    return {cfg, jobs};
+    return {std::move(cfg), std::move(jobs)};
 }
 
 int main(int argc, char* argv[]) {
     auto [cfg, commands] = parse_jobs_from_cli(argc, argv);
 
-    HyperShell app(cfg);
+    HyperShell app(std::move(cfg));
 
     std::cout << "verbose=" << cfg.verbose << "\n";
     std::cout << "dry_run=" << cfg.dry_run << "\n";

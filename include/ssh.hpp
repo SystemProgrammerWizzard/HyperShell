@@ -16,7 +16,10 @@ private:
 public:
     ~SSH();
     SSH(const std::string &username, const std::string &ip_address, const std::string &password);
-
+    SSH(const SSH&) = delete;
+    SSH(SSH&& other) noexcept;
+    SSH& operator=(SSH&& other) noexcept;
+    SSH& operator=(const SSH&) = delete;
     bool connect();
     bool exec(std::string);
     void disconnect();
