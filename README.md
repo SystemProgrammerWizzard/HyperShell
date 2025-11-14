@@ -3,7 +3,7 @@ A command-line tool to run multiple commands in parallel across multiple machine
 ## Sample use case
 ```sh
 # Remote
-hypershell ssh --user dave --hosts code@server1,code@server2 --cmd "ls -l" --cmd "df -h"
+hypershell ssh --user dave password Oces2023 --hosts code@server1 "ls -l" --cmd "df -h"
 
 # Local
 hypershell local --cmd "ls -l" --cmd "df -h"
